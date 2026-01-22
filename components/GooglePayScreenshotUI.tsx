@@ -9,6 +9,7 @@ const bankLogos: Record<string, ImageSourcePropType> = {
   hdfc: require('../assets/images/hdfc-logo.png'),
   icici: require('../assets/images/icici-bank-logo.png'),
   axis: require('../assets/images/axis-bank-logo.png'),
+  yes: require('../assets/images/yes-bank-logo.png'),
   default: require('../assets/images/upi-logo.png'),
 };
 
@@ -18,6 +19,7 @@ const getBankLogo = (bankName: string): ImageSourcePropType => {
   if (name.includes('hdfc')) return bankLogos.hdfc;
   if (name.includes('icici')) return bankLogos.icici;
   if (name.includes('axis')) return bankLogos.axis;
+  if (name.includes('yes')) return bankLogos.yes;
   return bankLogos.default;
 };
 
