@@ -2,15 +2,35 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+// Payment app options
+const PAYMENT_APPS = [
+  { 
+    id: 'googlepay', 
+    name: 'Google Pay', 
+    logo: require('../assets/images/google-pay-logo.png') 
+  },
+  { 
+    id: 'phonepe', 
+    name: 'PhonePe', 
+    logo: require('../assets/images/phonepe-logo.png') 
+  },
+  { 
+    id: 'paytm', 
+    name: 'Paytm', 
+    logo: require('../assets/images/paytm-logo.png') 
+  },
+];
 
 // Bank options for the dropdown
 const BANK_OPTIONS = [
@@ -25,6 +45,7 @@ export default function Home() {
   const insets = useSafeAreaInsets();
 
   // Form state
+  const [selectedApp, setSelectedApp] = useState('googlepay');
   const [recipientName, setRecipientName] = useState('');
   const [amount, setAmount] = useState('');
   const [dateTime, setDateTime] = useState('');
@@ -38,11 +59,15 @@ export default function Home() {
   const [fromName, setFromName] = useState('');
   const [fromBank, setFromBank] = useState('');
   const [fromEmail, setFromEmail] = useState('');
-  const [fromApp, setFromApp] = useState('');
   const [googleTransactionId, setGoogleTransactionId] = useState('');
+
+  const getSelectedAppName = () => {
+    return PAYMENT_APPS.find(app => app.id === selectedApp)?.name || 'Google Pay';
+  };
 
   const handleGenerateScreenshot = () => {
     const params = new URLSearchParams({
+      selectedApp,
       recipientName,
       amount,
       dateTime,
@@ -56,7 +81,7 @@ export default function Home() {
       fromName,
       fromBank,
       fromEmail,
-      fromApp,
+      fromApp: getSelectedAppName(),
       googleTransactionId,
     });
 
@@ -75,7 +100,7 @@ export default function Home() {
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View 
+        <View
           className="px-5 pb-6"
           style={{ paddingTop: insets.top + 20 }}
         >
@@ -84,12 +109,64 @@ export default function Home() {
               <Ionicons name="card" size={20} color="#FFFFFF" />
             </View>
             <Text className="text-white text-xl font-semibold">
-              GPay Generator
+              Payment Screenshot
             </Text>
           </View>
           <Text className="text-[#9AA0A6] text-sm mt-1">
             Create realistic payment screenshots
           </Text>
+        </View>
+
+        {/* App Selector */}
+        <View className="mx-5 mb-6 p-4 rounded-2xl bg-[#1E1E1E] border border-[#2D2D2D]">
+          <Text className="text-[#9AA0A6] text-xs uppercase tracking-wider mb-4">Select App</Text>
+          <View className="flex-row justify-around">
+            {PAYMENT_APPS.map((app) => (
+              <TouchableOpacity
+                key={app.id}
+                onPress={() => setSelectedApp(app.id)}
+                className="items-center"
+                activeOpacity={0.7}
+              >
+                <View className="relative">
+                  <View 
+                    className={`w-16 h-16 rounded-2xl bg-white items-center justify-center ${
+                      selectedApp === app.id 
+                        ? 'border-[3px] border-[#1A73E8]' 
+                        : 'border border-[#3A3A3A]'
+                    }`}
+                    style={selectedApp === app.id ? {
+                      shadowColor: '#1A73E8',
+                      shadowOffset: { width: 0, height: 0 },
+                      shadowOpacity: 0.4,
+                      shadowRadius: 8,
+                      elevation: 8,
+                    } : undefined}
+                  >
+                    <Image 
+                      source={app.logo}
+                      className="w-10 h-10"
+                      resizeMode="contain"
+                    />
+                  </View>
+                  {/* Checkmark Badge */}
+                  {selectedApp === app.id && (
+                    <View className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#1A73E8] items-center justify-center border-2 border-[#1E1E1E]">
+                      <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                    </View>
+                  )}
+                </View>
+                <Text className={`text-xs font-medium mt-2 ${
+                  selectedApp === app.id ? 'text-[#1A73E8]' : 'text-[#9AA0A6]'
+                }`}>
+                  {app.name}
+                </Text>
+                {selectedApp === app.id && (
+                  <View className="w-1.5 h-1.5 rounded-full bg-[#1A73E8] mt-1" />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         {/* Amount Card - Hero Section */}
@@ -172,12 +249,33 @@ export default function Home() {
             placeholder="e.g., 7820"
             keyboardType="numeric"
           />
-          <InputField
-            label="To App"
-            value={toApp}
-            onChangeText={setToApp}
-            placeholder="e.g., Google Pay"
-          />
+          {/* To App Selector */}
+          <View className="mb-4">
+            <Text className="text-[#9AA0A6] text-xs uppercase tracking-wide mb-2">To App</Text>
+            <View className="flex-row gap-3">
+              {PAYMENT_APPS.map((app) => (
+                <TouchableOpacity
+                  key={app.id}
+                  onPress={() => setToApp(app.name)}
+                  activeOpacity={0.7}
+                >
+                  <View 
+                    className={`w-12 h-12 rounded-xl bg-white items-center justify-center ${
+                      toApp === app.name 
+                        ? 'border-2 border-[#1A73E8]' 
+                        : 'border border-[#3A3A3A]'
+                    }`}
+                  >
+                    <Image 
+                      source={app.logo}
+                      className="w-7 h-7"
+                      resizeMode="contain"
+                    />
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
           <InputField
             label="To UPI ID"
             value={toUpiId}
@@ -199,12 +297,6 @@ export default function Home() {
             value={fromBank}
             onChangeText={setFromBank}
             placeholder="e.g., State Bank of India"
-          />
-          <InputField
-            label="From App"
-            value={fromApp}
-            onChangeText={setFromApp}
-            placeholder="e.g., Google Pay"
           />
           <InputField
             label="From Email/UPI ID"
