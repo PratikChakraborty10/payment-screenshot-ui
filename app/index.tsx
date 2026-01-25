@@ -1,7 +1,7 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Image,
   KeyboardAvoidingView,
@@ -17,6 +17,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { supabase } from '../lib/supabase';
 
 // Material 3 Colors (Light)
 const Colors = {
@@ -123,6 +124,33 @@ export default function Home() {
     router.push(`/screenshot?${params.toString()}`);
   };
 
+  const [user, setUser] = useState<any>(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+    });
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    // Router redirect handled in _layout
+  };
+
+  const UserAvatar = () => {
+    if (!user?.user_metadata?.avatar_url) return null;
+    return (
+      <Pressable onPress={() => setShowUserMenu(true)}>
+        <Image 
+          source={{ uri: user.user_metadata.avatar_url }} 
+          style={styles.headerAvatar} 
+          resizeMode="cover"
+        />
+      </Pressable>
+    );
+  };
+
   return (
     <>
       <StatusBar style="dark" backgroundColor={Colors.background} />
@@ -132,9 +160,40 @@ export default function Home() {
       <View style={styles.mainContainer}>
         {/* Header - Fixed at Top */}
         <View style={[styles.headerContainer, { paddingTop: insets.top }]}>
-          <Text style={styles.headerTitle}>Payment Screenshot</Text>
-          <Text style={styles.headerSubtitle}>Create realistic payment screenshots</Text>
+          <View style={styles.headerContentSpec}>
+             <View>
+                <Text style={styles.headerTitle}>Payment Screenshot</Text>
+                <Text style={styles.headerSubtitle}>Create realistic payment screenshots</Text>
+             </View>
+             <UserAvatar />
+          </View>
         </View>
+
+        {/* User Menu Modal */}
+        <Modal
+          visible={showUserMenu}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowUserMenu(false)}
+        >
+           <Pressable style={styles.modalOverlay} onPress={() => setShowUserMenu(false)}>
+              <View style={[styles.userMenuCard, { top: insets.top + 60 }]}>
+                  <View style={styles.userMenuHeader}>
+                      <Text style={styles.userMenuName}>{user?.user_metadata?.full_name || 'User'}</Text>
+                      <Text style={styles.userMenuEmail}>{user?.email}</Text>
+                  </View>
+                  <View style={styles.divider} />
+                  <Pressable 
+                    style={styles.logoutButton}
+                    onPress={handleLogout}
+                    android_ripple={{ color: '#ffcccc' }}
+                  >
+                     <MaterialIcons name="logout" size={20} color={Colors.error} />
+                     <Text style={styles.logoutText}>Logout</Text>
+                  </Pressable>
+              </View>
+           </Pressable>
+        </Modal>
 
         {/* KeyboardAvoidingView takes remaining space */}
         <KeyboardAvoidingView
@@ -507,6 +566,68 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.onSurfaceVariant,
     fontWeight: '400',
+  },
+  headerContentSpec: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center', // Align avatar with text
+  },
+  headerAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.surfaceContainerHigh,
+    borderWidth: 1,
+    borderColor: Colors.outlineVariant,
+  },
+  
+  // User Menu
+  userMenuCard: {
+    position: 'absolute',
+    right: 16,
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    width: 220,
+    paddingVertical: 8,
+    overflow: 'hidden',
+  },
+  userMenuHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  userMenuName: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: Colors.onSurface,
+  },
+  userMenuEmail: {
+    fontSize: 12,
+    color: Colors.onSurfaceVariant,
+    marginTop: 2,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.outlineVariant,
+    opacity: 0.2,
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  logoutText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: Colors.error,
   },
   scrollView: {
     flex: 1,
